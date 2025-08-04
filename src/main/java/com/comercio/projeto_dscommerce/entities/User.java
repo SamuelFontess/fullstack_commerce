@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name="tb_user")
@@ -18,7 +19,7 @@ public class User {
     @Column(unique = true)
     private String email;
     private String phone;
-    private LocalDate birthdate;
+    private LocalDate birth_date;
     private String password;
 
     @OneToMany(mappedBy = "client")
@@ -27,12 +28,12 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String name, String email, String phone, LocalDate birthdate, String password) {
+    public User(Long id, String name, String email, String phone, LocalDate birth_date, String password) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.phone = phone;
-        this.birthdate = birthdate;
+        this.birth_date = birth_date;
         this.password = password;
     }
 
@@ -68,12 +69,12 @@ public class User {
         this.phone = phone;
     }
 
-    public LocalDate getBirthdate() {
-        return birthdate;
+    public LocalDate getBirth_date() {
+        return birth_date;
     }
 
-    public void setBirthdate(LocalDate birthdate) {
-        this.birthdate = birthdate;
+    public void setBirth_date(LocalDate birth_date) {
+        this.birth_date = birth_date;
     }
 
     public String getPassword() {
@@ -86,5 +87,17 @@ public class User {
 
     public List<Order> getOrders() {
         return orders;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }
