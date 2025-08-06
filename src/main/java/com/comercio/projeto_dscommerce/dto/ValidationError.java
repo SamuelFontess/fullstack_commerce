@@ -1,7 +1,5 @@
 package com.comercio.projeto_dscommerce.dto;
 
-import org.springframework.validation.FieldError;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
