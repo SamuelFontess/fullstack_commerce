@@ -7,6 +7,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -63,18 +64,19 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(2)
-    public SecurityFilterChain asSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
 
-        http
-                .cors(Customizer.withDefaults()) // pega o CorsConfigurationSource automaticamente
-                .oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer.jwt(Customizer.withDefaults()));
-
-        http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .tokenEndpoint(tokenEndpoint -> tokenEndpoint
-                        .accessTokenRequestConverter(new CustomPasswordAuthenticationConverter())
-                        .authenticationProvider(new CustomPasswordAuthenticationProvider(
-                                authorizationService(), tokenGenerator(), userDetailsService, passwordEncoder())));
+        http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+                .with(authorizationServerConfigurer, config ->
+                        config.tokenEndpoint(tokenEndpoint -> tokenEndpoint
+                                .accessTokenRequestConverter(new CustomPasswordAuthenticationConverter())
+                                .authenticationProvider(new CustomPasswordAuthenticationProvider(
+                                        authorizationService(), tokenGenerator(), userDetailsService, passwordEncoder()))
+                        )
+                )
+                .cors(Customizer.withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
 
         return http.build();
     }

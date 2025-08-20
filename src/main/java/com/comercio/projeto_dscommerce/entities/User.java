@@ -75,7 +75,7 @@ public class User implements UserDetails {
         this.phone = phone;
     }
 
-    public LocalDate getBirth_date() {
+    public LocalDate getBirthDate() {
         return birthDate;
     }
 

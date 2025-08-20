@@ -1,5 +1,6 @@
 package com.comercio.projeto_dscommerce.services;
 
+import com.comercio.projeto_dscommerce.dto.UserDTO;
 import com.comercio.projeto_dscommerce.entities.Role;
 import com.comercio.projeto_dscommerce.entities.User;
 import com.comercio.projeto_dscommerce.projections.UserDetailsProjection;
@@ -38,5 +39,23 @@ public class UserService implements UserDetailsService {
         }
 
         return user;
+    }
+
+    protected User authenticated() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Jwt jwtPrincipal = (Jwt) authentication.getPrincipal();
+            String username = jwtPrincipal.getClaim("username");
+            return repository.findByEmail(username).get();
+        }
+        catch (Exception e) {
+            throw new UsernameNotFoundException("Invalid user");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO getMe() {
+        User entity = authenticated();
+        return new UserDTO(entity);
     }
 }

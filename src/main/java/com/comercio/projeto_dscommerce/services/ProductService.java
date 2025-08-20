@@ -1,7 +1,9 @@
 package com.comercio.projeto_dscommerce.services;
 
+import com.comercio.projeto_dscommerce.dto.CategoryDTO;
 import com.comercio.projeto_dscommerce.dto.ProductDTO;
 import com.comercio.projeto_dscommerce.dto.ProductMinDTO;
+import com.comercio.projeto_dscommerce.entities.Category;
 import com.comercio.projeto_dscommerce.entities.Product;
 import com.comercio.projeto_dscommerce.repositories.ProductRepository;
 import com.comercio.projeto_dscommerce.services.exceptions.DatabaseException;
@@ -31,7 +33,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<ProductMinDTO> findAll(String name, Pageable pageable) {
         Page<Product> result = repository.searchByName(name, pageable);
-        return result.map(x -> new ProductMinDTO(x));
+        return result.map(ProductMinDTO::new);
     }
 
     @Transactional
@@ -73,5 +75,12 @@ public class ProductService {
         entity.setDescription(dto.getDescription());
         entity.setPrice(dto.getPrice());
         entity.setImgUrl(dto.getImgUrl());
+
+        entity.getCategories().clear();
+        for (CategoryDTO catDto : dto.getCategories()) {
+            Category cat = new Category();
+            cat.setId(catDto.getId());
+            entity.getCategories().add(cat);
+        }
     }
 }
