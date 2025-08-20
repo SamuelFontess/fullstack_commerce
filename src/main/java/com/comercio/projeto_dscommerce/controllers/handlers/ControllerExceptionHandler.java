@@ -3,6 +3,7 @@ package com.comercio.projeto_dscommerce.controllers.handlers;
 import com.comercio.projeto_dscommerce.dto.CustomErrorDTO;
 import com.comercio.projeto_dscommerce.dto.ValidationErrorDTO;
 import com.comercio.projeto_dscommerce.services.exceptions.DatabaseException;
+import com.comercio.projeto_dscommerce.services.exceptions.ForbiddenException;
 import com.comercio.projeto_dscommerce.services.exceptions.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,13 @@ public class ControllerExceptionHandler {
         for (FieldError f : e.getBindingResult().getFieldErrors()) {
             err.addError(f.getField(), f.getDefaultMessage());
         }
+        return ResponseEntity.status(status).body(err);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<CustomErrorDTO> forbidden(ForbiddenException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        CustomErrorDTO err = new CustomErrorDTO(Instant.now(), status.value(), e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status).body(err);
     }
 
