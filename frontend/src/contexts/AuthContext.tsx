@@ -25,22 +25,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Função para fazer login
     const login = async (username: string, password: string) => {
-        const credentials: LoginDTO = { username, password };
+        try {
+            console.log('🔐 AuthContext: Iniciando login...');
 
-        const response = await api.post<TokenResponse>('/oauth/token', {
-            ...credentials,
-            grant_type: 'password',
-        });
+            // Chamada ao endpoint /auth/login no backend
+            const response = await api.post<TokenResponse>('/oauth2/token', {
+                username,
+                password,
+                grant_type: 'password',
+            });
 
-        localStorage.setItem('access_token', response.data.access_token);
+            console.log('✅ Token recebido:', response.data);
 
-        // Buscar dados do usuário
-        const userResponse = await api.get<User>('/users/me');
-        setUser(userResponse.data);
+            // Salvar token no localStorage
+            localStorage.setItem('access_token', response.data.access_token);
+
+            // Buscar dados do usuário usando o token no Authorization header
+            console.log('👤 Buscando dados do usuário...');
+            const userResponse = await api.get<User>('/users/me');
+
+            console.log('✅ Dados do usuário:', userResponse.data);
+            setUser(userResponse.data);
+
+        } catch (error: any) {
+            console.error('❌ Erro no AuthContext login:', error);
+            console.error('📋 Error response:', error.response?.data);
+            throw error;
+        }
     };
 
     // Função para fazer logout
     const logout = () => {
+        console.log('🚪 Fazendo logout...');
         localStorage.removeItem('access_token');
         setUser(null);
         window.location.href = '/login';
@@ -55,12 +71,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const initAuth = async () => {
             const token = getToken();
 
+            console.log('🔍 Token encontrado:', !!token);
+
             if (token) {
                 try {
+                    console.log('👤 Carregando usuário com token existente...');
                     const userResponse = await api.get<User>('/users/me');
+                    console.log('✅ Usuário carregado:', userResponse.data);
                     setUser(userResponse.data);
                 } catch (error) {
-                    console.error('Erro ao carregar usuário:', error);
+                    console.error('❌ Erro ao carregar usuário:', error);
                     localStorage.removeItem('access_token');
                 }
             }

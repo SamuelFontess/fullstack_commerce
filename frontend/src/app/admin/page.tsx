@@ -1,142 +1,137 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
-import { Sidebar } from '@/components/Sidebar';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
-interface DashboardStats {
-    totalProducts: number;
-    totalOrders: number;
-    totalUsers: number;
-    totalRevenue: number;
-}
+export default function LoginPage() {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [debugInfo, setDebugInfo] = useState('');
 
-export default function AdminPage() {
-    const { user, isAdmin } = useAuth();
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { login } = useAuth();
+    const router = useRouter();
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                // Simular dados para o dashboard
-                // Em uma aplicação real, você faria requisições separadas
-                const [productsRes, ordersRes] = await Promise.all([
-                    api.get('/products?size=0'), // Para contar total
-                    api.get('/orders?size=0'),   // Para contar total
-                ]);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setDebugInfo('');
 
-                setStats({
-                    totalProducts: productsRes.data.totalElements,
-                    totalOrders: ordersRes.data.totalElements,
-                    totalUsers: 0, // Implementar endpoint
-                    totalRevenue: 0, // Calcular a partir dos pedidos
-                });
-            } catch (error) {
-                console.error('Erro ao carregar estatísticas:', error);
-            } finally {
-                setLoading(false);
+        try {
+            // Debug: mostrar dados que estão sendo enviados
+            setDebugInfo(`Tentando login com: ${username}`);
+            console.log('🔐 Tentando login com:', { username, password: '***' });
+            console.log('🌐 URL da API:', process.env.NEXT_PUBLIC_API_URL);
+
+            await login(username, password);
+
+            console.log('✅ Login bem-sucedido!');
+            setDebugInfo('Login bem-sucedido! Redirecionando...');
+
+            router.push('/');
+        } catch (err: any) {
+            console.error('❌ Erro no login:', err);
+            console.error('📋 Response:', err.response?.data);
+            console.error('📋 Status:', err.response?.status);
+
+            let errorMessage = 'Erro desconhecido';
+
+            if (err.response?.status === 401) {
+                errorMessage = 'Credenciais inválidas';
+            } else if (err.response?.status === 400) {
+                errorMessage = 'Dados inválidos';
+            } else if (err.response?.data?.error_description) {
+                errorMessage = err.response.data.error_description;
+            } else if (err.message) {
+                errorMessage = err.message;
             }
-        };
 
-        if (isAdmin) {
-            fetchStats();
+            setError(errorMessage);
+            setDebugInfo(`Erro: ${err.response?.status} - ${JSON.stringify(err.response?.data)}`);
+        } finally {
+            setLoading(false);
         }
-    }, [isAdmin]);
-
-    if (!user || !isAdmin) {
-        return (
-            <div className="text-center text-red-600">
-                Acesso negado. Apenas administradores podem acessar esta página.
-            </div>
-        );
-    }
+    };
 
     return (
-        <div className="flex">
-            <Sidebar />
+        <div className="max-w-md mx-auto">
+            <Card>
+                <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
 
-            <div className="flex-1 p-8">
-                <h1 className="text-3xl font-bold mb-8">Dashboard Administrativo</h1>
-
-                {loading ? (
-                    <div className="text-center">Carregando estatísticas...</div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <Card>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-blue-600 mb-2">
-                                    {stats?.totalProducts || 0}
-                                </div>
-                                <div className="text-gray-600">Produtos</div>
-                            </div>
-                        </Card>
-
-                        <Card>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-green-600 mb-2">
-                                    {stats?.totalOrders || 0}
-                                </div>
-                                <div className="text-gray-600">Pedidos</div>
-                            </div>
-                        </Card>
-
-                        <Card>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-purple-600 mb-2">
-                                    {stats?.totalUsers || 0}
-                                </div>
-                                <div className="text-gray-600">Usuários</div>
-                            </div>
-                        </Card>
-
-                        <Card>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-orange-600 mb-2">
-                                    R$ {stats?.totalRevenue || 0}
-                                </div>
-                                <div className="text-gray-600">Receita</div>
-                            </div>
-                        </Card>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <Card>
-                        <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
-                        <div className="space-y-2">
-                            <a href="/admin/products/new" className="block p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                                ➕ Adicionar Novo Produto
-                            </a>
-                            <a href="/admin/products" className="block p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                                📦 Gerenciar Produtos
-                            </a>
-                            <a href="/admin/orders" className="block p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                                📋 Ver Pedidos Recentes
-                            </a>
-                        </div>
-                    </Card>
-
-                    <Card>
-                        <h3 className="text-lg font-semibold mb-4">Atividade Recente</h3>
-                        <div className="space-y-3 text-sm text-gray-600">
-                            <div className="flex items-center space-x-2">
-                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                <span>Novo pedido #123 realizado</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                <span>Produto "Notebook" atualizado</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                <span>Novo usuário cadastrado</span>
-                            </div>
-                        </div>
-                    </Card>
+                {/* Informações de Debug */}
+                <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
+                    <p><strong>API URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}</p>
+                    <p><strong>Debug:</strong> {debugInfo}</p>
                 </div>
-            </div>
+
+                <form onSubmit={handleSubmit}>
+                    <Input
+                        label="Email/Username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Digite seu email ou username"
+                        required
+                    />
+
+                    <Input
+                        label="Senha"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Digite sua senha"
+                        required
+                    />
+
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <strong>Erro:</strong> {error}
+                        </div>
+                    )}
+
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={loading}
+                    >
+                        {loading ? 'Entrando...' : 'Entrar'}
+                    </Button>
+                </form>
+
+                {/* Credenciais de teste (remover em produção) */}
+                <div className="mt-4 p-3 bg-blue-50 rounded text-sm">
+                    <p className="font-semibold">Credenciais de teste:</p>
+                    <p>Email: maria@gmail.com</p>
+                    <p>Senha: 123456</p>
+                    <div className="mt-2 space-x-2">
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                                setUsername('maria@gmail.com');
+                                setPassword('123456');
+                            }}
+                        >
+                            Usar Admin
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                                setUsername('alex@gmail.com');
+                                setPassword('123456');
+                            }}
+                        >
+                            Usar Cliente
+                        </Button>
+                    </div>
+                </div>
+            </Card>
         </div>
     );
 }
