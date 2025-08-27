@@ -3,7 +3,7 @@ export interface User {
     firstName: string;
     lastName: string;
     email: string;
-    roles: Role[];
+    roles: string[];
 }
 
 export interface Role {
@@ -99,4 +99,5 @@ export interface TokenResponse {
     token_type: string;
     expires_in: number;
     scope: string;
+    jti: string;
 }

@@ -1,13 +1,17 @@
 'use client';
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '@/lib/api';
-import { User, LoginDTO, TokenResponse } from '@/lib/types';
+import { User } from '@/lib/types';
+import { authService } from '@/lib/auth';
+import { userService } from '@/services/userService';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     login: (username: string, password: string) => Promise<void>;
     logout: () => void;
+    isAuthenticated: boolean;
     isAdmin: boolean;
 }
 
@@ -16,85 +20,58 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
-    // Função para verificar se tem token
-    const getToken = (): string | null => {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem('access_token');
-    };
-
-    // Função para fazer login
-    const login = async (username: string, password: string) => {
-        try {
-            console.log('🔐 AuthContext: Iniciando login...');
-
-            // Chamada ao endpoint /auth/login no backend
-            const response = await api.post<TokenResponse>('/oauth2/token', {
-                username,
-                password,
-                grant_type: 'password',
-            });
-
-            console.log('✅ Token recebido:', response.data);
-
-            // Salvar token no localStorage
-            localStorage.setItem('access_token', response.data.access_token);
-
-            // Buscar dados do usuário usando o token no Authorization header
-            console.log('👤 Buscando dados do usuário...');
-            const userResponse = await api.get<User>('/users/me');
-
-            console.log('✅ Dados do usuário:', userResponse.data);
-            setUser(userResponse.data);
-
-        } catch (error: any) {
-            console.error('❌ Erro no AuthContext login:', error);
-            console.error('📋 Error response:', error.response?.data);
-            throw error;
+    const fetchUser = async () => {
+        const token = authService.getToken();
+        if (token) {
+            try {
+                const userData = await userService.getMe();
+                setUser(userData);
+            } catch (error) {
+                console.error('Erro ao buscar dados do usuário:', error);
+                authService.logout();
+                router.push('/login');
+            }
         }
-    };
-
-    // Função para fazer logout
-    const logout = () => {
-        console.log('🚪 Fazendo logout...');
-        localStorage.removeItem('access_token');
-        setUser(null);
-        window.location.href = '/login';
-    };
-
-    // Função para verificar se é admin
-    const hasRole = (user: User, role: string): boolean => {
-        return user.roles.some(r => r.authority === role);
+        setLoading(false);
     };
 
     useEffect(() => {
-        const initAuth = async () => {
-            const token = getToken();
-
-            console.log('🔍 Token encontrado:', !!token);
-
-            if (token) {
-                try {
-                    console.log('👤 Carregando usuário com token existente...');
-                    const userResponse = await api.get<User>('/users/me');
-                    console.log('✅ Usuário carregado:', userResponse.data);
-                    setUser(userResponse.data);
-                } catch (error) {
-                    console.error('❌ Erro ao carregar usuário:', error);
-                    localStorage.removeItem('access_token');
-                }
-            }
-
-            setLoading(false);
-        };
-
-        initAuth();
+        fetchUser();
     }, []);
 
-    const isAdmin = user ? hasRole(user, 'ROLE_ADMIN') : false;
+    const handleLogin = async (username: string, password: string) => {
+        setLoading(true);
+        try {
+            const token = await authService.login(username, password);
+            await fetchUser();
+            router.push('/');
+        } catch (error) {
+            console.error('Erro no login:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        authService.logout();
+        setUser(null);
+    };
+
+    const isAuthenticated = !!user;
+    const isAdmin = user ? authService.hasRole(user, 'ROLE_ADMIN') : false;
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, isAdmin }}>
+        <AuthContext.Provider value={{
+            user,
+            loading,
+            login: handleLogin,
+            logout: handleLogout,
+            isAuthenticated,
+            isAdmin
+        }}>
             {children}
         </AuthContext.Provider>
     );
