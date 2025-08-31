@@ -1,106 +1,155 @@
 'use client';
-import Image from 'next/image';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { CartItem } from '@/components/CartItem';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Loading } from '@/components/ui/Loading';
+import { formatPrice } from '@/lib/utils';
+import { ShoppingCartIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 export default function CartPage() {
-    const { items, updateQuantity, removeItem, totalPrice, clearCart } = useCart();
+    const { items, totalItems, totalValue, clearCart, isCartAccessible } = useCart();
+    const { user, loading } = useAuth();
+    const router = useRouter();
 
-    if (items.length === 0) {
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/login?redirect=/cart');
+        }
+    }, [user, loading, router]);
+
+    if (loading) {
         return (
-            <div className="text-center">
-                <h1 className="text-3xl font-bold mb-4">Carrinho</h1>
-                <p className="text-gray-600">Seu carrinho está vazio</p>
+            <div className="container mx-auto px-4 py-8">
+                <Loading text="Carregando carrinho..." />
             </div>
         );
     }
 
-    const handleCheckout = () => {
-        // Implementar lógica de checkout
-        alert('Funcionalidade de checkout em desenvolvimento');
-    };
+    if (!user || !isCartAccessible) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <Card className="p-8 text-center">
+                    <h2 className="text-2xl font-bold text-red-600 mb-4">Acesso Negado</h2>
+                    <p className="text-gray-600 mb-4">Você precisa estar logado para acessar o carrinho.</p>
+                    <Link href="/login?redirect=/cart">
+                        <Button>Fazer Login</Button>
+                    </Link>
+                </Card>
+            </div>
+        );
+    }
+
+    if (items.length === 0) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <EmptyState
+                    icon={ShoppingCartIcon}
+                    title="Seu carrinho está vazio"
+                    description="Adicione produtos ao seu carrinho para continuar com a compra."
+                    action={
+                        <Link href="/products">
+                            <Button>Ver Produtos</Button>
+                        </Link>
+                    }
+                />
+            </div>
+        );
+    }
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold">Carrinho</h1>
-                <Button variant="danger" onClick={clearCart}>
-                    Limpar Carrinho
-                </Button>
-            </div>
+        <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">Carrinho de Compras</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-4">
-                    {items.map(item => (
-                        <Card key={item.product.id} className="flex items-center space-x-4">
-                            <div className="w-20 h-20 relative">
-                                <Image
-                                    src={item.product.imgUrl}
-                                    alt={item.product.name}
-                                    fill
-                                    className="object-cover rounded"
-                                />
-                            </div>
-
-                            <div className="flex-1">
-                                <h3 className="font-semibold">{item.product.name}</h3>
-                                <p className="text-gray-600">{formatPrice(item.product.price)}</p>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
+                {/* lista de Itens */}
+                <div className="lg:col-span-2">
+                    <Card>
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-semibold">
+                                    Itens ({totalItems})
+                                </h2>
                                 <Button
                                     size="sm"
-                                    variant="secondary"
-                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                    onClick={clearCart}
+                                    className="text-red-600 hover:text-red-700"
                                 >
-                                    -
-                                </Button>
-                                <span className="w-8 text-center">{item.quantity}</span>
-                                <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                >
-                                    +
+                                    Limpar Carrinho
                                 </Button>
                             </div>
 
-                            <div className="text-right">
-                                <p className="font-semibold">
-                                    {formatPrice(item.product.price * item.quantity)}
-                                </p>
-                                <Button
-                                    size="sm"
-                                    variant="danger"
-                                    onClick={() => removeItem(item.product.id)}
-                                >
-                                    Remover
-                                </Button>
+                            <div className="space-y-4">
+                                {items.map((item) => (
+                                    <CartItem key={item.id} item={item} />
+                                ))}
                             </div>
-                        </Card>
-                    ))}
+                        </div>
+                    </Card>
                 </div>
 
-                <Card className="h-fit">
-                    <h3 className="text-xl font-semibold mb-4">Resumo</h3>
+                {/* resumo do Pedido */}
+                <div>
+                    <Card className="sticky top-4">
+                        <div className="p-6">
+                            <h2 className="text-xl font-semibold mb-4">Resumo do Pedido</h2>
 
-                    <div className="space-y-2 mb-6">
-                        <div className="flex justify-between">
-                            <span>Subtotal:</span>
-                            <span>{formatPrice(totalPrice)}</span>
-                        </div>
-                        <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                            <span>Total:</span>
-                            <span>{formatPrice(totalPrice)}</span>
-                        </div>
-                    </div>
+                            <div className="space-y-3 mb-6">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Subtotal ({totalItems} itens)</span>
+                                    <span className="font-medium">{formatPrice(totalValue)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Frete</span>
+                                    <span className="font-medium text-green-600">Grátis</span>
+                                </div>
+                                <div className="border-t pt-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-lg font-semibold">Total</span>
+                                        <span className="text-lg font-bold text-green-600">
+                      {formatPrice(totalValue)}
+                    </span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <Button className="w-full" onClick={handleCheckout}>
-                        Finalizar Compra
-                    </Button>
-                </Card>
+                            <div className="space-y-3">
+                                <Link href="/checkout">
+                                    <Button className="w-full" size="lg">
+                                        Finalizar Compra
+                                    </Button>
+                                </Link>
+
+                                <Link href="/products">
+                                    <Button variant="outline" className="w-full">
+                                        Continuar Comprando
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            {/* informações Adicionais */}
+                            <div className="mt-6 pt-6 border-t text-sm text-gray-600">
+                                <div className="flex items-center mb-2">
+                                    <span className="text-green-600 mr-2">✓</span>
+                                    Frete grátis para todo o Brasil
+                                </div>
+                                <div className="flex items-center mb-2">
+                                    <span className="text-green-600 mr-2">✓</span>
+                                    Compra 100% segura
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="text-green-600 mr-2">✓</span>
+                                    Garantia de 30 dias
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
     );

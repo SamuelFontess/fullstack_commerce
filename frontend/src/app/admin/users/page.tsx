@@ -1,93 +1,93 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
-import { productService } from '@/services/productService';
-import { Product } from '@/lib/types';
+import { userService } from '@/services/userService';
+import { User } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Loading } from '@/components/ui/Loading';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
-import { ProductTable } from '@/app/admin/ProductTable';
-import { ProductModal } from '@/app/admin/ProductModal';
+import { UserTable } from '@/components/admin/UserTable';
+import { UserModal } from '@/components/admin/UserModal';
 import { Sidebar } from '@/components/Sidebar';
 import { useToast } from '@/hooks/useToast';
-import { CubeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { UsersIcon, PlusIcon } from '@heroicons/react/24/outline';
 
-interface ProductsResponse {
-    content: Product[];
+interface UsersResponse {
+    content: User[];
     totalPages: number;
     totalElements: number;
     number: number;
     size: number;
 }
 
-export default function AdminProductsPage() {
-    const [products, setProducts] = useState<Product[]>([]);
+export default function AdminUsersPage() {
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
 
-    const { canManageProducts } = usePermissions();
+    const { canManageUsers } = usePermissions();
     const { addToast } = useToast();
 
     useEffect(() => {
-        if (canManageProducts()) {
-            loadProducts();
+        if (canManageUsers()) {
+            loadUsers();
         }
-    }, [currentPage, searchTerm, canManageProducts]);
+    }, [currentPage, searchTerm, canManageUsers]);
 
-    const loadProducts = async () => {
+    const loadUsers = async () => {
         try {
             setLoading(true);
-            const response: ProductsResponse = await productService.getAll({
+            const response: UsersResponse = await userService.getAll({
                 page: currentPage - 1,
                 size: 10,
-                name: searchTerm
+                search: searchTerm
             });
 
-            setProducts(response.content);
+            setUsers(response.content);
             setTotalPages(response.totalPages);
         } catch (error) {
             addToast({
                 type: 'error',
                 title: 'Erro',
-                message: 'Erro ao carregar produtos'
+                message: 'Erro ao carregar usuários'
             });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreateProduct = () => {
-        setEditingProduct(null);
+    const handleCreateUser = () => {
+        setEditingUser(null);
         setIsModalOpen(true);
     };
 
-    const handleEditProduct = (product: Product) => {
-        setEditingProduct(product);
+    const handleEditUser = (user: User) => {
+        setEditingUser(user);
         setIsModalOpen(true);
     };
 
-    const handleDeleteProduct = async (productId: number) => {
-        if (confirm('Tem certeza que deseja excluir este produto?')) {
+    const handleDeleteUser = async (userId: number) => {
+        if (confirm('Tem certeza que deseja excluir este usuário?')) {
             try {
-                await productService.delete(productId);
+                await userService.delete(userId);
                 addToast({
                     type: 'success',
                     title: 'Sucesso',
-                    message: 'Produto excluído com sucesso'
+                    message: 'Usuário excluído com sucesso'
                 });
-                loadProducts();
+                loadUsers();
             } catch (error) {
                 addToast({
                     type: 'error',
                     title: 'Erro',
-                    message: 'Erro ao excluir produto'
+                    message: 'Erro ao excluir usuário'
                 });
             }
         }
@@ -95,14 +95,14 @@ export default function AdminProductsPage() {
 
     const handleModalClose = () => {
         setIsModalOpen(false);
-        setEditingProduct(null);
-        loadProducts();
+        setEditingUser(null);
+        loadUsers();
     };
 
-    if (!canManageProducts()) {
+    if (!canManageUsers()) {
         return (
             <div className="text-center text-red-600 p-8">
-                Acesso negado. Você não tem permissão para gerenciar produtos.
+                Acesso negado. Você não tem permissão para gerenciar usuários.
             </div>
         );
     }
@@ -113,12 +113,12 @@ export default function AdminProductsPage() {
             <div className="flex-1 p-8">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Gerenciar Produtos</h1>
-                        <p className="text-gray-600">Adicione, edite ou remova produtos do catálogo</p>
+                        <h1 className="text-3xl font-bold text-gray-900">Gerenciar Usuários</h1>
+                        <p className="text-gray-600">Adicione, edite ou remova usuários do sistema</p>
                     </div>
-                    <Button onClick={handleCreateProduct}>
+                    <Button onClick={handleCreateUser}>
                         <PlusIcon className="w-4 h-4 mr-2" />
-                        Novo Produto
+                        Novo Usuário
                     </Button>
                 </div>
 
@@ -126,7 +126,7 @@ export default function AdminProductsPage() {
                 <Card className="mb-6">
                     <div className="p-4">
                         <Input
-                            placeholder="Buscar produtos..."
+                            placeholder="Buscar usuários..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -134,25 +134,25 @@ export default function AdminProductsPage() {
                 </Card>
 
                 {loading ? (
-                    <Loading text="Carregando produtos..." />
-                ) : products.length === 0 ? (
+                    <Loading text="Carregando usuários..." />
+                ) : users.length === 0 ? (
                     <EmptyState
-                        icon={CubeIcon}
-                        title="Nenhum produto encontrado"
-                        description="Comece adicionando seu primeiro produto ao catálogo."
+                        icon={UsersIcon}
+                        title="Nenhum usuário encontrado"
+                        description="Comece adicionando seu primeiro usuário ao sistema."
                         action={
-                            <Button onClick={handleCreateProduct}>
+                            <Button onClick={handleCreateUser}>
                                 <PlusIcon className="w-4 h-4 mr-2" />
-                                Adicionar Produto
+                                Adicionar Usuário
                             </Button>
                         }
                     />
                 ) : (
                     <>
-                        <ProductTable
-                            products={products}
-                            onEdit={handleEditProduct}
-                            onDelete={handleDeleteProduct}
+                        <UserTable
+                            users={users}
+                            onEdit={handleEditUser}
+                            onDelete={handleDeleteUser}
                         />
 
                         {totalPages > 1 && (
@@ -167,11 +167,10 @@ export default function AdminProductsPage() {
                     </>
                 )}
 
-                {/* Modal */}
-                <ProductModal
+                <UserModal
                     isOpen={isModalOpen}
                     onClose={handleModalClose}
-                    product={editingProduct}
+                    user={editingUser}
                 />
             </div>
         </div>

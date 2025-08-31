@@ -1,27 +1,33 @@
-import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { CartProvider } from '@/contexts/CartContext';
-import { Header } from '@/components/Header';
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { ToastProvider } from '@/hooks/useToast'
+import { CartProvider } from '@/contexts/CartContext'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+    title: 'E-commerce',
+    description: 'Sua loja online',
+}
 
 export default function RootLayout({
                                        children,
                                    }: {
-    children: React.ReactNode;
+    children: React.ReactNode
 }) {
     return (
         <html lang="pt-BR">
-        <body>
-        <AuthProvider>
-            <CartProvider>
-                <div className="min-h-screen bg-gray-50">
-                    <Header />
-                    <main className="container mx-auto px-4 py-8">
-                        {children}
-                    </main>
-                </div>
-            </CartProvider>
-        </AuthProvider>
+        <body className={inter.className}>
+        <ToastProvider>
+            <AuthProvider>
+                <CartProvider>
+                    {children}
+                </CartProvider>
+            </AuthProvider>
+        </ToastProvider>
         </body>
         </html>
-    );
+    )
 }

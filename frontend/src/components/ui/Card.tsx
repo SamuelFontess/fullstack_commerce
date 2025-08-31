@@ -5,10 +5,13 @@ interface CardProps {
     children: ReactNode,
     className?: string,
     padding?: 'sm' | 'md' | 'lg',
-    onClick?: (() => void) | undefined
+    onClick?: (() => void) | undefined,
+    variant?: string,
+    onMouseEnter?: () => void,
+    onMouseLeave?: () => void
 }
 
-export function Card({children, className, padding = 'md', onClick}: CardProps) {
+export function Card({children, className, padding = 'md', onClick, variant, onMouseEnter, onMouseLeave}: CardProps) {
     return (
         <div
             className={clsx(

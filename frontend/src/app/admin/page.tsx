@@ -1,137 +1,112 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import {
+    ShoppingBagIcon,
+    CubeIcon,
+    UsersIcon,
+    ChartBarIcon
+} from '@heroicons/react/24/outline';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default function LoginPage() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [debugInfo, setDebugInfo] = useState('');
-
-    const { login } = useAuth();
+export default function AdminDashboard() {
+    const { user, loading } = useAuth();
+    const { isAdmin } = usePermissions();
     const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        setDebugInfo('');
-
-        try {
-            // Debug: mostrar dados que estão sendo enviados
-            setDebugInfo(`Tentando login com: ${username}`);
-            console.log('🔐 Tentando login com:', { username, password: '***' });
-            console.log('🌐 URL da API:', process.env.NEXT_PUBLIC_API_URL);
-
-            await login(username, password);
-
-            console.log('✅ Login bem-sucedido!');
-            setDebugInfo('Login bem-sucedido! Redirecionando...');
-
+    useEffect(() => {
+        if (!loading && !isAdmin) {
             router.push('/');
-        } catch (err: any) {
-            console.error('❌ Erro no login:', err);
-            console.error('📋 Response:', err.response?.data);
-            console.error('📋 Status:', err.response?.status);
-
-            let errorMessage = 'Erro desconhecido';
-
-            if (err.response?.status === 401) {
-                errorMessage = 'Credenciais inválidas';
-            } else if (err.response?.status === 400) {
-                errorMessage = 'Dados inválidos';
-            } else if (err.response?.data?.error_description) {
-                errorMessage = err.response.data.error_description;
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
-
-            setError(errorMessage);
-            setDebugInfo(`Erro: ${err.response?.status} - ${JSON.stringify(err.response?.data)}`);
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [loading, isAdmin, router]);
+
+    if (loading) {
+        return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+    }
+
+    if (!isAdmin) {
+        return null;
+    }
+
+    const adminCards = [
+        {
+            title: 'Gerenciar Produtos',
+            description: 'Adicionar, editar e remover produtos',
+            icon: CubeIcon,
+            href: '/admin/products',
+            color: 'bg-blue-500'
+        },
+        {
+            title: 'Gerenciar Pedidos',
+            description: 'Visualizar e gerenciar pedidos',
+            icon: ShoppingBagIcon,
+            href: '/admin/orders',
+            color: 'bg-green-500'
+        },
+        {
+            title: 'Usuários',
+            description: 'Gerenciar usuários do sistema',
+            icon: UsersIcon,
+            href: '/admin/users',
+            color: 'bg-purple-500'
+        },
+        {
+            title: 'Relatórios',
+            description: 'Visualizar relatórios e estatísticas',
+            icon: ChartBarIcon,
+            href: '/admin/reports',
+            color: 'bg-orange-500'
+        }
+    ];
 
     return (
-        <div className="max-w-md mx-auto">
-            <Card>
-                <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
+        <div className="container mx-auto px-4 py-8">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
+                <p className="text-gray-600">Bem-vindo, {user?.firstName}! Gerencie sua loja aqui.</p>
+            </div>
 
-                {/* Informações de Debug */}
-                <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
-                    <p><strong>API URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}</p>
-                    <p><strong>Debug:</strong> {debugInfo}</p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {adminCards.map((card) => (
+                    <Link key={card.href} href={card.href}>
+                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                            <div className="p-6">
+                                <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                                    <card.icon className="w-6 h-6 text-white" />
+                                </div>
+                                <h3 className="font-semibold text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                                    {card.title}
+                                </h3>
+                                <p className="text-gray-600 text-sm">{card.description}</p>
+                            </div>
+                        </Card>
+                    </Link>
+                ))}
+            </div>
 
-                <form onSubmit={handleSubmit}>
-                    <Input
-                        label="Email/Username"
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Digite seu email ou username"
-                        required
-                    />
-
-                    <Input
-                        label="Senha"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Digite sua senha"
-                        required
-                    />
-
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                            <strong>Erro:</strong> {error}
-                        </div>
-                    )}
-
-                    <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={loading}
-                    >
-                        {loading ? 'Entrando...' : 'Entrar'}
-                    </Button>
-                </form>
-
-                {/* Credenciais de teste (remover em produção) */}
-                <div className="mt-4 p-3 bg-blue-50 rounded text-sm">
-                    <p className="font-semibold">Credenciais de teste:</p>
-                    <p>Email: maria@gmail.com</p>
-                    <p>Senha: 123456</p>
-                    <div className="mt-2 space-x-2">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                                setUsername('maria@gmail.com');
-                                setPassword('123456');
-                            }}
-                        >
-                            Usar Admin
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => {
-                                setUsername('alex@gmail.com');
-                                setPassword('123456');
-                            }}
-                        >
-                            Usar Cliente
-                        </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <div className="p-6 text-center">
+                        <div className="text-3xl font-bold text-blue-600 mb-2">150</div>
+                        <div className="text-gray-600">Produtos Ativos</div>
                     </div>
-                </div>
-            </Card>
+                </Card>
+                <Card>
+                    <div className="p-6 text-center">
+                        <div className="text-3xl font-bold text-green-600 mb-2">45</div>
+                        <div className="text-gray-600">Pedidos Hoje</div>
+                    </div>
+                </Card>
+                <Card>
+                    <div className="p-6 text-center">
+                        <div className="text-3xl font-bold text-purple-600 mb-2">1.2k</div>
+                        <div className="text-gray-600">Usuários Ativos</div>
+                    </div>
+                </Card>
+            </div>
         </div>
     );
 }

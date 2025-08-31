@@ -3,16 +3,34 @@ export interface User {
     firstName: string;
     lastName: string;
     email: string;
-    roles: string[];
+    roles: Role[];
 }
 
 export interface Role {
     id: number;
-    authority: string;
+    authority: string; // 'ROLE_ADMIN' | 'ROLE_CLIENT'
+}
+
+export interface UserDTO {
+    id?: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password?: string;
+    roles?: Role[];
 }
 
 export interface Product {
     id: number;
+    name: string;
+    description: string;
+    price: number;
+    imgUrl: string;
+    categories: Category[];
+}
+
+export interface ProductDTO {
+    id?: number;
     name: string;
     description: string;
     price: number;
@@ -35,18 +53,22 @@ export interface Order {
 }
 
 export interface OrderItem {
-    id: {
-        product: {
-            id: number;
-        };
-        order: {
-            id: number;
-        };
-    };
-    product: Product;
+    subTotal: number;
+    id: number;
     quantity: number;
     price: number;
-    subTotal: number;
+    product: Product;
+    name: string;
+    imgUrl: string;
+}
+
+export interface OrderDTO {
+    id?: number;
+    items: {
+        productId: number;
+        quantity: number;
+        price: number;
+    }[];
 }
 
 export enum OrderStatus {
@@ -57,47 +79,6 @@ export enum OrderStatus {
     CANCELED = 'CANCELED'
 }
 
-export interface CartItem {
-    product: Product;
+export interface CartItem extends Product {
     quantity: number;
-}
-
-// DTOs para formulários
-export interface LoginDTO {
-    username: string;
-    password: string;
-}
-
-export interface ProductDTO {
-    name: string;
-    description: string;
-    price: number;
-    imgUrl: string;
-    categories: { id: number }[];
-}
-
-export interface OrderDTO {
-    items: {
-        productId: number;
-        quantity: number;
-    }[];
-}
-
-// Tipos de resposta da API
-export interface PageResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-    first: boolean;
-    last: boolean;
-}
-
-export interface TokenResponse {
-    access_token: string;
-    token_type: string;
-    expires_in: number;
-    scope: string;
-    jti: string;
 }
