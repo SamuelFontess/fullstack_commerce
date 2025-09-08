@@ -79,7 +79,7 @@ public class User implements UserDetails {
         return birthDate;
     }
 
-    public void setBirth_date(LocalDate birth_date) {
+    public void setBirthDate(LocalDate birth_date) {
         this.birthDate = birth_date;
     }
 
