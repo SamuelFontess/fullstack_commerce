@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     // Tenta buscar os dados do usuário se houver um token
                     const response = await api.get<User>('/users/me');
                     setUser(response.data);
+                    console.log('AuthContext: User loaded:', response.data);
                 }
             } catch (error) {
                 // Se a requisição falhar (token inválido, expirado, etc.), limpa o token e o usuário

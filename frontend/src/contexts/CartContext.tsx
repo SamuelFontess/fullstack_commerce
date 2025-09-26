@@ -28,8 +28,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (user) {
             const savedCart = localStorage.getItem(`cart_${user.id}`);
+            console.log(`CartContext: Attempting to load cart for user ${user.id}. Saved cart:`, savedCart);
             if (savedCart) {
-                setItems(JSON.parse(savedCart));
+                try {
+                    setItems(JSON.parse(savedCart));
+                    console.log(`CartContext: Loaded cart for user ${user.id}:`, JSON.parse(savedCart));
+                } catch (e) {
+                    console.error(`CartContext: Error parsing saved cart for user ${user.id}:`, e);
+                    setItems([]);
+                }
+            } else {
+                setItems([]); // Garante que o carrinho esteja vazio se não houver dados salvos para o usuário
+                console.log(`CartContext: No saved cart found for user ${user.id}. Cart set to empty.`);
             }
         } else {
             // Limpar carrinho quando usuário faz logout

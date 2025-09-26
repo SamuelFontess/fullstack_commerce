@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/Button';
-import { SearchBar } from '@/components/SearchBar';
+
 import { UserMenu } from '@/components/UserMenu';
 import { MobileMenu } from '@/components/MobileMenu';
 import {
@@ -18,7 +18,7 @@ import {formatPrice} from "@/lib/utils";
 
 export function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+
 
     const { user } = useAuth();
     const { totalItems, totalValue } = useCart();
@@ -65,14 +65,7 @@ export function Header() {
                         </div>
                     </Link>
 
-                    {/* Search Bar - Desktop */}
-                    <div className="hidden lg:block flex-1 max-w-2xl mx-8">
-                        <SearchBar
-                            value={searchTerm}
-                            onChange={setSearchTerm}
-                            placeholder="Buscar produtos, marcas..."
-                        />
-                    </div>
+
 
                     {/* Actions */}
                     <div className="flex items-center space-x-4">
@@ -123,14 +116,7 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Search Bar - Mobile */}
-                <div className="lg:hidden mt-4">
-                    <SearchBar
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                        placeholder="Buscar produtos..."
-                    />
-                </div>
+
             </div>
 
             {/* Navigation */}

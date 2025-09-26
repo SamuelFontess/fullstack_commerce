@@ -10,7 +10,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CubeIcon } from '@heroicons/react/24/outline';
 
 export default function ProductsPage() {
-    const [searchTerm, setSearchTerm] = useState('');
+    const [inputSearchTerm, setInputSearchTerm] = useState("");
+    const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [sortBy, setSortBy] = useState('name');
 
@@ -18,7 +19,7 @@ export default function ProductsPage() {
     const { products, loading, error, totalPages } = useProducts({
         page: currentPage - 1,
         size: 12,
-        name: searchTerm,
+        name: appliedSearchTerm,
         sort: sortBy
     });
 
@@ -59,8 +60,12 @@ export default function ProductsPage() {
 
                         <div className="flex-1 max-w-md">
                             <SearchBar
-                                value={searchTerm}
-                                onChange={setSearchTerm}
+                                value={inputSearchTerm}
+                                onSearch={(value) => {
+                                    setAppliedSearchTerm(value);
+                                    setCurrentPage(1); // Reset page to 1 on new search
+                                }}
+                                onChange={setInputSearchTerm}
                                 placeholder="Buscar produtos..."
                             />
                         </div>
